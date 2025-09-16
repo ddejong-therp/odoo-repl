@@ -78,8 +78,9 @@ def create_namespace(
             )
         cursor = odoo.sql_db.db_connect(db_name).cursor()
         atexit.register(cursor.close)
-        if not hasattr(odoo.api.Environment._local, "environments"):
-            odoo.api.Environment._local.environments = odoo.api.Environments()
+        if hasattr(odoo.api.Environment, "_local"):
+            if not hasattr(odoo.api.Environment._local, "environments"):
+                odoo.api.Environment._local.environments = odoo.api.Environments()
         env = odoo.api.Environment(cursor, odoo.SUPERUSER_ID, {})
     elif isinstance(db, odoo.sql_db.Cursor):
         env = odoo.api.Environment(db, odoo.SUPERUSER_ID, {})
