@@ -255,9 +255,13 @@ def populate_xml_records(modules):
         path = odoo.modules.module.get_module_path(module, display_warning=False)
         if not path:
             continue
-        manifest = odoo.modules.module.load_information_from_description_file(
-            module, mod_path=path
-        )
+        # Odoo has renamed load_information_from_description_file to get_manifest
+        if hasattr(odoo.modules.module, "get_manifest"):
+            manifest = odoo.modules.module.get_manifest(module, mod_path=path)
+        else:
+            manifest = odoo.modules.module.load_information_from_description_file(
+                module, mod_path=path
+            )
         path = os.path.realpath(path)
         data_files = list(manifest.get("data", ()))
         if demo:
