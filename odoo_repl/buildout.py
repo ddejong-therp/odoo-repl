@@ -62,7 +62,7 @@ import odoo_repl
 sys.path.pop()
 odoo_repl.parse_config(['-c', session.openerp_config_file] + {extra_args!r})
 session.open()
-_, ns = odoo_repl.create_namespace(session.env)
+ns = odoo_repl.build_namespace(session.env)
 """.format(
         odoo_repl_path=os.path.dirname(
             os.path.dirname(odoo_repl.__file__)

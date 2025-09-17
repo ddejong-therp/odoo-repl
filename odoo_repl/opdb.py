@@ -83,11 +83,10 @@ class OPdb(pdb.Pdb, object):
         f_self = self.curframe_locals.get("self", None)
         f_cr = self.curframe_locals.get("cr", None)
         if hasattr(f_self, "env") and isinstance(f_self.env, odoo.api.Environment):
-            self.env, ns = odoo_repl.create_namespace(f_self.env)
-        elif isinstance(f_cr, odoo.sql_db.Cursor):
-            self.env, ns = odoo_repl.create_namespace(f_cr)
+            ns = odoo_repl.build_namespace(f_self.env)
         else:
-            self.env, ns = odoo_repl.create_namespace(None)
+            self.env = odoo_repl.build_env(f_cr)
+            ns = odoo_repl.build_namespace(self.env)
         self.repl_namespace.update(ns)
 
     def _setup_framelocals(self):

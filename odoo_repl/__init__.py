@@ -60,17 +60,21 @@ def parse_config(argv):
     odoo.tools.config.parse_config(argv)
 
 
-def create_namespace(
-    db,  # type: t.Union[None, t.Text, odoo.sql_db.Cursor, odoo.api.Environment]
+def build_env(
+    var,  # type: t.Union[None, t.Text, odoo.sql_db.Cursor, odoo.api.Environment]
 ):
-    # type: (...) -> t.Tuple[odoo.api.Environment, t.Dict[str, t.Any]]
-    global xml_thread
+    # type: (...) -> t.Tuple[odoo.api.Environment
+    """Creates an instance of `odoo.api.Environment`.
+    Or returns it if it already is an instance of it.
+    """
     if not hasattr(odoo, "tools"):
         raise RuntimeError(
             "Odoo is not imported. You should run this from an Odoo shell."
         )
-    if db is None or isinstance(db, Text):
-        db_name = db or odoo.tools.config["db_name"]
+
+    env = None
+    if var is None or isinstance(var, Text):
+        db_name = var or odoo.tools.config["db_name"]
         if not db_name:
             raise ValueError(
                 "Can't determine database name. Run with `-- -d dbname` "
@@ -79,16 +83,28 @@ def create_namespace(
         cursor = odoo.sql_db.db_connect(db_name).cursor()
         atexit.register(cursor.close)
         if hasattr(odoo.api.Environment, "_local"):
-            if not hasattr(odoo.api.Environment._local, "environments"):
-                odoo.api.Environment._local.environments = odoo.api.Environments()
+            if not hasattr(
+                odoo.api.Environment._local,  # pylint: disable=protected-access
+                "environments"
+            ):
+                odoo.api.Environment._local.environments = \
+                    odoo.api.Environments()  # pylint: disable=protected-access
         env = odoo.api.Environment(cursor, odoo.SUPERUSER_ID, {})
-    elif isinstance(db, odoo.sql_db.Cursor):
-        env = odoo.api.Environment(db, odoo.SUPERUSER_ID, {})
-    elif isinstance(db, odoo.api.Environment):
-        env = db
+    elif isinstance(var, odoo.sql_db.Cursor):
+        env = odoo.api.Environment(var, odoo.SUPERUSER_ID, {})
+    elif isinstance(var, odoo.api.Environment):
+        env = var
     else:
-        raise TypeError(db)
+        raise TypeError(var)
 
+    atexit.register(env.cr.close)
+    return env
+
+
+def build_namespace(
+    env,  # type: t.Union[None, t.Text, odoo.sql_db.Cursor, odoo.api.Environment]
+):
+    # type: (...) -> t.Tuple[odoo.api.Environment, t.Dict[str, t.Any]]
     envproxy = EnvProxy(env)
     util.env = env
 
@@ -165,7 +181,7 @@ def create_namespace(
         xml_thread.daemon = True
         xml_thread.start()
 
-    return env, namespace
+    return namespace
 
 
 xml_thread = None  # type: t.Optional[threading.Thread]
@@ -192,9 +208,8 @@ def enable(
     else:
         target_ns = vars(module)
 
-    env_, to_install = create_namespace(db)
-
-    atexit.register(env_.cr.close)
+    env = build_env(db)
+    to_install = build_namespace(env)
 
     sys.displayhook = displayhook
 
@@ -203,10 +218,20 @@ def enable(
     # TODO: It should probably run iff odoo_repl.enable() is called from pdb
 
     # pdb.Pdb.displayhook = OPdb.displayhook
+    _install_vars(target_ns, to_install)
 
-    for name, obj in to_install.items():
-        if name not in target_ns or type(target_ns[name]) is type(obj):
-            target_ns[name] = obj
+
+def install(namespace, db=None):
+    """Installs 'global' repl variables in the given `namespace` dict."""
+    env = build_env(db)
+    vars_ = build_namespace(env)
+    _install_vars(namespace, vars_)
+
+
+def _install_vars(namespace, vars_):
+    for name, obj in vars_.items():
+        if name not in namespace or type(namespace[name]) is type(obj):
+            namespace[name] = obj
 
 
 def odoo_repr(obj):
