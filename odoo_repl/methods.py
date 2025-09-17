@@ -41,6 +41,9 @@ class MethodProxy(object):
         return sorted(listing)
 
     def __repr__(self):
+        return method_repr(self)
+
+    def __str__(self):
         # type: () -> str
         return "{}({!r}, {!r}, {!r})".format(
             self.__class__.__name__, self._real, self.model, self.name

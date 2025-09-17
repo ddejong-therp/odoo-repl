@@ -37,6 +37,9 @@ class FieldProxy(object):
         return sorted(listing)
 
     def __repr__(self):
+        return field_repr(self)
+
+    def __str__(self):
         # type: () -> str
         if not hasattr(self._real, "model_name"):
             return "<Undisplayable field>"  # Work around Odoo bug

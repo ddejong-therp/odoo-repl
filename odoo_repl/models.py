@@ -33,9 +33,8 @@ FIELD_BLACKLIST = {
 def model_repr(obj):
     # type: (t.Union[ModelProxy, BaseModel]) -> t.Text
     """Summarize a model's fields."""
-    if isinstance(obj, ModelProxy) and obj._real is None:
-        return repr(obj)
-    obj = util.unwrap(obj)
+    if obj._real != None:
+        obj = util.unwrap(obj)
 
     field_names = []
     delegated = []
@@ -293,6 +292,9 @@ class ModelProxy(object):
         assert self._real is not None
         return self._real.search([], count=True)
 
+    def __str__(self):
+        return f"<{self.__class__.__name__}({self._path})>"
+
     def mapped(self, *a, **k):
         # type: (t.Any, t.Any) -> t.Any
         assert self._real is not None
@@ -320,7 +322,7 @@ class ModelProxy(object):
 
     def __repr__(self):
         # type: () -> str
-        return "<{}({})>".format(self.__class__.__name__, self._path)
+        return model_repr(self)
 
     def _repr_pretty_(self, printer, _cycle):
         # type: (t.Any, t.Any) -> None
