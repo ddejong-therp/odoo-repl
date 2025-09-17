@@ -4,7 +4,7 @@ It's compatible with Odoo 8 and upwards.
 
 # Installing
 
-The module can be installed with pip: `pip install odoo-repl`.
+The module can be installed with pip: `pip install git+https://github.com/ddejong-therp/odoo-repl.git`.
 
 # Running
 
